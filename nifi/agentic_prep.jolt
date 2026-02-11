@@ -1,0 +1,28 @@
+[
+  {
+    "operation": "shift",
+    "spec": {
+      "request_meta": {
+        "user_session": "agent_id",
+        "timestamp_ms": "ts"
+      },
+      "event_details": {
+        "action": "raw_action",
+        "component": "raw_component"
+      }
+    }
+  },
+  {
+    "operation": "modify-overwrite-beta",
+    "spec": {
+      "observation": "=concat('User ', @(1,raw_action), ' on the ', @(1,raw_component))"
+    }
+  },
+  {
+    "operation": "remove",
+    "spec": {
+      "raw_action": "",
+      "raw_component": ""
+    }
+  }
+]

@@ -28,4 +28,3 @@ Standard RAG (Retrieval-Augmented Generation) relies on static, batch-loaded dat
 
 ## ⚙️ Quick Start
 *(Deployment instructions using Docker Compose and Confluent Cloud coming soon...)*
-0 *(Deployment instructions using Docker Compose and Confluent Cloud coming soon...)*

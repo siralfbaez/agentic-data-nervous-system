@@ -1,0 +1,33 @@
+# version: '3.8'
+
+services:
+  # The "Nervous System" - Local Mock Kafka (KRaft Mode, No Zookeeper)
+  kafka:
+    image: apache/kafka:latest
+    container_name: local-mock-broker
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://local-mock-broker:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@local-mock-broker:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  # The "Senses" - Apache NiFi 2.x
+  nifi:
+    image: apache/nifi:latest
+    container_name: local-nifi-senses
+    ports:
+      - "8443:8443" # NiFi 2.x defaults to secure HTTPS
+    environment:
+      SINGLE_USER_CREDENTIALS_USERNAME: admin
+      SINGLE_USER_CREDENTIALS_PASSWORD: AgenticPassword123!
+    depends_on:
+      - kafka
