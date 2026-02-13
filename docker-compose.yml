@@ -1,7 +1,8 @@
 # version: '3.8'
 
 services:
-  # The "Nervous System" - Local Mock Kafka (KRaft Mode, No Zookeeper)
+  # ---- Kafka ------------
+  # The "Nervous System" - Local Mock Kafka (KRaft Mode, No Zookeeper) 
   kafka:
     image: apache/kafka:latest
     container_name: local-mock-broker
@@ -20,6 +21,9 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
 
+    networks:
+      - agent_network
+
   # The "Senses" - Apache NiFi 2.x
   nifi:
     image: apache/nifi:latest
@@ -31,3 +35,53 @@ services:
       SINGLE_USER_CREDENTIALS_PASSWORD: AgenticPassword123!
     depends_on:
       - kafka
+    networks:
+      - agent_network
+
+# --- The Brain (Apache Flink) ---
+  jobmanager:
+    image: flink:1.18.0-java11
+    ports:
+      - "8081:8081"
+    command: jobmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+    volumes:
+      - ./flink_sql:/opt/flink/usrlib
+    networks:
+      - agent_network
+
+  taskmanager:
+    image: flink:1.18.0-java11
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        taskmanager.numberOfTaskSlots: 2
+    networks:
+      - agent_network
+
+  # --- The SQL Client (Where we run the queries) ---
+  sql-client:
+    image: flink:1.18.0-java11
+    depends_on:
+      - jobmanager
+      - kafka
+    environment:
+      - FLINK_PROPERTIES=jobmanager.rpc.address:jobmanager
+      - REST_ADDRESS=jobmanager 
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MONGO_URI=${MONGO_URI}
+    volumes:
+      - ./flink_sql:/opt/flink/sql
+    networks:
+      - agent_network
+# --- Top Level Network ---
+networks:
+  agent_network:
+    driver: bridge

@@ -1,0 +1,22 @@
+# --- Security ---
+.env
+.env.*
+*.pem
+
+# --- System ---
+.DS_Store
+Thumbs.db
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+
+# --- IDEs ---
+.vscode/
+.idea/
+
+# --- Logs ---
+*.log

@@ -1,18 +1,18 @@
--- The "Memory" Output Stream
-CREATE TABLE vectorized_memory (
+-- The "Memory" Output Stream (Direct to MongoDB Atlas)
+CREATE TABLE vector_memory (
     agent_id STRING,
     window_start TIMESTAMP(3),
     behavior_summary STRING,
     vector ARRAY<FLOAT>
 ) WITH (
-    'connector' = 'kafka',
-    'topic' = 'agent_memory_vectors',
-    'properties.bootstrap.servers' = 'local-mock-broker:9092',
-    'format' = 'json'
+    'connector' = 'mongodb',
+    'uri' = '${MONGO_URI}',
+    'database' = 'agentic_nervous_system',
+    'collection' = 'vector_memory'
 );
 
 -- The "Synapse" Logic: Sessionize Behavior -> Vectorize -> Sink
-INSERT INTO vectorized_memory
+INSERT INTO vector_memory
 SELECT 
     agent_id, 
     window_start, 
