@@ -1,4 +1,4 @@
-# version: '3.8'
+# version: '3.8' ---- this is deprecated
 
 services:
   # ---- Kafka ------------
@@ -40,9 +40,10 @@ services:
 
 # --- The Brain (Apache Flink) ---
   jobmanager:
-    image: flink:1.18.0-java11
+    build: .
+    container_name: jobmanager
     ports:
-      - "8081:8081"
+    - "8081:8081"
     command: jobmanager
     environment:
       - |
@@ -54,7 +55,7 @@ services:
       - agent_network
 
   taskmanager:
-    image: flink:1.18.0-java11
+    build: .
     depends_on:
       - jobmanager
     command: taskmanager
@@ -68,7 +69,7 @@ services:
 
   # --- The SQL Client (Where we run the queries) ---
   sql-client:
-    image: flink:1.18.0-java11
+    build: .
     depends_on:
       - jobmanager
       - kafka

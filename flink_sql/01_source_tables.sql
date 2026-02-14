@@ -1,15 +1,16 @@
--- The "Senses" Input Stream
 CREATE TABLE raw_agent_context (
     agent_id STRING,
-    ts BIGINT,
     observation STRING,
-    -- Convert epoch to native timestamp for accurate time-travel and windowing
-    event_time AS TO_TIMESTAMP_LTZ(ts, 3),
+    event_time TIMESTAMP(3),
     WATERMARK FOR event_time AS event_time - INTERVAL '5' SECOND
 ) WITH (
     'connector' = 'kafka',
-    'topic' = 'raw_agent_context',
+    'topic' = 'agent_observations',
     'properties.bootstrap.servers' = 'local-mock-broker:9092',
+    'properties.group.id' = 'testGroup',
+    'scan.startup.mode' = 'earliest-offset',
     'format' = 'json',
-    'scan.startup.mode' = 'latest-offset'
+    'properties.allow.auto.create.topics' = 'true',
+    -- Corrected name below (use a string like '10 s' or '10000 ms')
+    'scan.topic-partition-discovery.interval' = '10 s'
 );

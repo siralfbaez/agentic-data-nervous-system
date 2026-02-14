@@ -13,11 +13,11 @@ CREATE TABLE vector_memory (
 
 -- The "Synapse" Logic: Sessionize Behavior -> Vectorize -> Sink
 INSERT INTO vector_memory
-SELECT 
-    agent_id, 
-    window_start, 
+SELECT
+    agent_id,
+    window_start,
     LISTAGG(observation, ' | ') AS behavior_summary,
-    ML_PREDICT('nervous_system_embedder', LISTAGG(observation, ' | ')) 
+    ML_PREDICT('nervous_system_embedder', LISTAGG(observation, ' | '))
 FROM TABLE(
     TUMBLE(TABLE raw_agent_context, DESCRIPTOR(event_time), INTERVAL '1' MINUTE)
 )

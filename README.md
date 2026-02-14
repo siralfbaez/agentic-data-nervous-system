@@ -14,6 +14,34 @@ Standard RAG (Retrieval-Augmented Generation) relies on static, batch-loaded dat
 3. **The Brain (Processing - Apache Flink 2.2):** - Executes tumbling windows for behavioral sessionization and performs **in-stream vectorization** by calling OpenAI embedding models directly via Flink SQL.
 4. **The Memory (Storage - MongoDB Atlas):** - Serves as the Vector Database sink, enabling semantic search and "Agentic Reflection" via `dotProduct` similarity.
 
+```mermaid
+graph TD
+subgraph "Senses (Ingestion)"
+A[NiFi: GenerateFlowFile] -->|Raw Observation| B[NiFi: PublishKafka]
+end
+
+    subgraph "Nervous System (Stream Processing)"
+        B -->|Event Stream| C[Kafka: agent_observations]
+        C -->|Flink SQL Source| D[Apache Flink]
+        
+        subgraph "Brain (AI Logic)"
+            D -->|UDF Call| E[OpenAI: text-embedding-3-small]
+            E -->|1536-dim Vector| D
+        end
+        
+        D -->|Tumble Window 1min| F[Aggregate & Embed]
+    end
+
+    subgraph "Long Term Memory (Storage)"
+        F -->|Flink SQL Sink| G[(MongoDB Atlas)]
+        G -->|Vector Search Index| H[Intelligent Retrieval]
+    end
+
+    style E fill:#19c37d,stroke:#333,stroke-width:2px,color:#fff
+    style G fill:#00ed64,stroke:#333,stroke-width:2px,color:#000
+    style D fill:#f54242,stroke:#333,stroke-width:2px,color:#fff
+```
+
 ## 📂 Repository Structure
 
 * `/nifi` - JOLT transforms and flow definitions for raw data ingestion.
