@@ -56,3 +56,74 @@ end
 
 ## ⚙️ Quick Start
 *(Deployment instructions using Docker Compose and Confluent Cloud coming soon...)*
+
+## How to Run
+1. #### Environment Setup
+   Ensure your ```.env``` file contains your ```OPENAI_API_KEY``` and MongoDB Atlas connection strings.
+
+2. #### Start Infrastructure
+   Build and launch the containers:
+
+```bash
+   docker compose build --no-cache
+   docker compose up -d
+```
+3. #### Initialize Kafka Topics
+   If the topics do not exist, create them manually (or start NiFi to auto-create):
+```bash
+  docker exec -it local-mock-broker /opt/kafka/bin/kafka-topics.sh --create \
+  --topic agent_observations \
+  --bootstrap-server localhost:9092 \
+  --partitions 1 \
+  --replication-factor 1
+  ```
+4. #### Launch Flink SQL Pipeline
+   Run the SQL client with the necessary Python environment flags and initialization scripts:
+```bash
+  docker compose run --rm sql-client ./bin/sql-client.sh \
+  -Drest.address=jobmanager \
+  -l /opt/flink/sql \
+  -Dpython.executable=/usr/bin/python3 \
+  -Dpython.client.executable=/usr/bin/python3 \
+  -i /opt/flink/sql/01_source_tables.sql \
+  -i /opt/flink/sql/02_ai_model.sql
+
+```
+5. ### Start the AI Function & Pipeline
+   Inside the Flink SQL prompt, register the UDF and fire the ```INSERT``` job:
+
+```SQL
+-- Register the AI Logic
+CREATE TEMPORARY SYSTEM FUNCTION get_embedding 
+AS 'embeddings.get_openai_embedding' 
+LANGUAGE PYTHON;
+
+-- Start the Long-Term Memory Pipeline
+INSERT INTO vector_memory
+SELECT 
+    agent_id, 
+    window_start, 
+    'Summary: ' || LISTAGG(observation, ' | ') as behavior_summary,
+    get_embedding('Summary: ' || LISTAGG(observation, ' | '))
+FROM TABLE(
+    TUMBLE(TABLE raw_agent_context, DESCRIPTOR(event_time), INTERVAL '1' MINUTE)
+)
+GROUP BY window_start, window_end, agent_id;
+```
+### Vector Search Index (MongoDB Atlas)
+To enable retrieval, create a Search Index in Atlas with the following JSON:
+```JSON
+{
+  "fields": [
+    {
+      "numDimensions": 1536,
+      "path": "vector",
+      "similarity": "cosine",
+      "type": "vector"
+    }
+  ]
+}
+
+
+```
+
